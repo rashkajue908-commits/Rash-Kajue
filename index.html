@@ -10,16 +10,16 @@
 
   <div class="max-w-2xl w-full bg-gray-800 p-8 rounded-2xl shadow-xl space-y-6">
     <h1 class="text-3xl font-bold text-center text-blue-400">Live AI Lip Sync Generator</h1>
-    <p class="text-sm text-gray-400 text-center">Upload a portrait image and audio clip to generate a synchronized video (1–10 minutes).</p>
+    <p class="text-sm text-gray-400 text-center">Upload an image portrait and audio track to create a lip-synced video clip (1–10 seconds).</p>
 
     <form id="lipsyncForm" class="space-y-4">
-      <!-- Source Image Upload -->
+      <!-- Image Upload -->
       <div>
         <label class="block text-sm font-medium mb-1">Source Image (Portrait)</label>
         <input type="file" id="imageInput" accept="image/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
       </div>
 
-      <!-- Audio File Upload -->
+      <!-- Audio Upload -->
       <div>
         <label class="block text-sm font-medium mb-1">Audio File (Speech/Song)</label>
         <input type="file" id="audioInput" accept="audio/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
@@ -28,10 +28,10 @@
       <!-- Duration Slider -->
       <div>
         <div class="flex justify-between text-sm font-medium mb-1">
-          <label>Clip Duration (Minutes)</label>
-          <span id="durationVal" class="text-blue-400 font-bold">5 min</span>
+          <label>Clip Duration (Seconds)</label>
+          <span id="durationVal" class="text-blue-400 font-bold">5s</span>
         </div>
-        <input type="range" id="duration" min="1" max="10" value="5" class="w-full accent-blue-500 cursor-pointer" oninput="document.getElementById('durationVal').textContent = this.value + ' min'">
+        <input type="range" id="duration" min="1" max="10" value="5" class="w-full accent-blue-500 cursor-pointer" oninput="document.getElementById('durationVal').textContent = this.value + 's'">
       </div>
 
       <!-- Submit Button -->
@@ -62,25 +62,22 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const durationInMinutes = document.getElementById('duration').value;
-      const durationInSeconds = durationInMinutes * 60; // Convert to seconds for backend processing
-
       const formData = new FormData();
       formData.append('image', document.getElementById('imageInput').files[0]);
       formData.append('audio', document.getElementById('audioInput').files[0]);
-      formData.append('duration', durationInSeconds);
+      formData.append('duration', document.getElementById('duration').value);
 
       statusDiv.classList.remove('hidden');
       outputContainer.classList.add('hidden');
       statusDiv.textContent = "Uploading files and initiating generation...";
 
       try {
-        // Replace with your backend URL if hosted separately (e.g. on Render)
         const res = await fetch('/api/generate-lipsync', { method: 'POST', body: formData });
         const data = await res.json();
 
         if (!data.success) throw new Error(data.error);
 
+        // Poll for processing completion
         pollStatus(data.predictionId);
       } catch (err) {
         statusDiv.textContent = "Error: " + err.message;
