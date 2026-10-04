@@ -1,1 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Lip Sync Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6">
 
+  <div class="max-w-2xl w-full bg-gray-800 p-8 rounded-2xl shadow-xl space-y-6">
+    <h1 class="text-3xl font-bold text-center text-blue-400">Live AI Lip Sync Generator</h1>
+    <p class="text-sm text-gray-400 text-center">Upload an image portrait and audio track to create a lip-synced video clip (1–10 seconds).</p>
+
+    <form id="lipsyncForm" class="space-y-4">
+      <!-- Image Upload -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Source Image (Portrait)</label>
+        <input type="file" id="imageInput" accept="image/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
+      </div>
+
+      <!-- Audio Upload -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Audio File (Speech/Song)</label>
+        <input type="file" id="audioInput" accept="audio/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
+      </div>
+
+      <!-- Duration Slider -->
+      <div>
+        <div class="flex justify-between text-sm font-medium mb-1">
+          <label>Clip Duration (Seconds)</label>
+          <span id="durationVal" class="text-blue-400 font-bold">5s</span>
+        </div>
+        <input type="range" id="duration" min="1" max="10" value="5" class="w-full accent-blue-500 cursor-pointer" oninput="document.getElementById('durationVal').textContent = this.value + 's'">
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" id="submitBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-lg transition duration-200">
+        Generate Lip Sync Video
+      </button>
+    </form>
+
+    <!-- Status & Video Output -->
+    <div id="status" class="hidden text-center text-yellow-400 font-medium">Processing video, please wait...</div>
+    
+    <div id="outputContainer" class="hidden flex flex-col items-center space-y-4 mt-4">
+      <h2 class="text-xl font-semibold">Generated Output</h2>
+      <video id="outputVideo" controls class="w-full rounded-lg border border-gray-700 shadow-lg"></video>
+      <a id="downloadBtn" download="lipsync_output.mp4" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-lg">
+        Download Video
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('lipsyncForm');
+    const statusDiv = document.getElementById('status');
+    const outputContainer = document.getElementById('outputContainer');
+    const outputVideo = document.getElementById('outputVideo');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append('image', document.getElementById('imageInput').files[0]);
+      formData.append('audio', document.getElementById('audioInput').files[0]);
+      formData.append('duration', document.getElementById('duration').value);
+
+      statusDiv.classList.remove('hidden');
+      outputContainer.classList.add('hidden');
+      statusDiv.textContent = "Uploading files and initiating generation...";
+
+      try {
+        const res = await fetch('/api/generate-lipsync', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error);
+
+        // Poll for processing completion
+        pollStatus(data.predictionId);
+      } catch (err) {
+        statusDiv.textContent = "Error: " + err.message;
+      }
+    });
+
+    async function pollStatus(id) {
+      const interval = setInterval(async () => {
+        const res = await fetch(`/api/status/${id}`);
+        const data = await res.json();
+
+        if (data.status === 'succeeded') {
+          clearInterval(interval);
+          statusDiv.classList.add('hidden');
+          outputVideo.src = data.output;
+          downloadBtn.href = data.output;
+          outputContainer.classList.remove('hidden');
+        } else if (data.status === 'failed') {
+          clearInterval(interval);
+          statusDiv.textContent = "Generation failed. Please try again.";
+        } else {
+          statusDiv.textContent = `Status: ${data.status}... Processing clip.`;
+        }
+      }, 3000);
+    }
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Lip Sync Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6">
+
+  <div class="max-w-2xl w-full bg-gray-800 p-8 rounded-2xl shadow-xl space-y-6">
+    <h1 class="text-3xl font-bold text-center text-blue-400">Live AI Lip Sync Generator</h1>
+    <p class="text-sm text-gray-400 text-center">Upload an image portrait and audio track to create a lip-synced video clip (1–10 seconds).</p>
+
+    <form id="lipsyncForm" class="space-y-4">
+      <!-- Image Upload -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Source Image (Portrait)</label>
+        <input type="file" id="imageInput" accept="image/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
+      </div>
+
+      <!-- Audio Upload -->
+      <div>
+        <label class="block text-sm font-medium mb-1">Audio File (Speech/Song)</label>
+        <input type="file" id="audioInput" accept="audio/*" required class="w-full text-sm text-gray-300 bg-gray-700 rounded p-2 border border-gray-600">
+      </div>
+
+      <!-- Duration Slider -->
+      <div>
+        <div class="flex justify-between text-sm font-medium mb-1">
+          <label>Clip Duration (Seconds)</label>
+          <span id="durationVal" class="text-blue-400 font-bold">5s</span>
+        </div>
+        <input type="range" id="duration" min="1" max="10" value="5" class="w-full accent-blue-500 cursor-pointer" oninput="document.getElementById('durationVal').textContent = this.value + 's'">
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" id="submitBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-lg transition duration-200">
+        Generate Lip Sync Video
+      </button>
+    </form>
+
+    <!-- Status & Video Output -->
+    <div id="status" class="hidden text-center text-yellow-400 font-medium">Processing video, please wait...</div>
+    
+    <div id="outputContainer" class="hidden flex flex-col items-center space-y-4 mt-4">
+      <h2 class="text-xl font-semibold">Generated Output</h2>
+      <video id="outputVideo" controls class="w-full rounded-lg border border-gray-700 shadow-lg"></video>
+      <a id="downloadBtn" download="lipsync_output.mp4" class="px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-lg">
+        Download Video
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('lipsyncForm');
+    const statusDiv = document.getElementById('status');
+    const outputContainer = document.getElementById('outputContainer');
+    const outputVideo = document.getElementById('outputVideo');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append('image', document.getElementById('imageInput').files[0]);
+      formData.append('audio', document.getElementById('audioInput').files[0]);
+      formData.append('duration', document.getElementById('duration').value);
+
+      statusDiv.classList.remove('hidden');
+      outputContainer.classList.add('hidden');
+      statusDiv.textContent = "Uploading files and initiating generation...";
+
+      try {
+        const res = await fetch('/api/generate-lipsync', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (!data.success) throw new Error(data.error);
+
+        // Poll for processing completion
+        pollStatus(data.predictionId);
+      } catch (err) {
+        statusDiv.textContent = "Error: " + err.message;
+      }
+    });
+
+    async function pollStatus(id) {
+      const interval = setInterval(async () => {
+        const res = await fetch(`/api/status/${id}`);
+        const data = await res.json();
+
+        if (data.status === 'succeeded') {
+          clearInterval(interval);
+          statusDiv.classList.add('hidden');
+          outputVideo.src = data.output;
+          downloadBtn.href = data.output;
+          outputContainer.classList.remove('hidden');
+        } else if (data.status === 'failed') {
+          clearInterval(interval);
+          statusDiv.textContent = "Generation failed. Please try again.";
+        } else {
+          statusDiv.textContent = `Status: ${data.status}... Processing clip.`;
+        }
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
